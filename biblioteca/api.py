@@ -74,27 +74,37 @@ def login(request, payload: LoginSchema):
 
 
 
-# Esquema de respuesta para el perfil del usuario
+# Entrada esperada del POST
+class UserProfileRequest(Schema):
+    username: str
+
+# Salida del perfil de usuario
 class UserProfileResponse(Schema):
     username: str
     nombre: str
     email: str
-    centre: Optional[str]
-    cicle: Optional[str]
-    imatge: Optional[str]
-    grupos: List[str]
-    telefon: Optional[str]
+    centre: str | None = None
+    cicle: str | None = None
+    imatge: str | None = None
+    grupos: list[str]
+    telefon: str | None = None
 
-# Endpoint para obtener el perfil del usuario
-@api.get("/perfil/{username}", response=UserProfileResponse)
-def perfil(request, username: str):
-    user = get_object_or_404(User, username=username)
-    nombre = user.get_full_name() if user.first_name and user.last_name else None
+@api.post("/perfil/", response=UserProfileResponse)
+def perfil(request, data: UserProfileRequest):
+    user = get_object_or_404(User, username=data.username)
+
+    nombre = user.get_full_name() if user.first_name or user.last_name else ""
     centre_name = user.centre.nom if user.centre else None
     cicle_name = user.cicle.nom if user.cicle else None
-    imatge_url = user.imatge.url if user.imatge else None
-    grupos = [group.name for group in user.groups.all()]
+
+    # Manejo seguro de imagen
+    try:
+        imatge_url = user.imatge.url if user.imatge else None
+    except ValueError:
+        imatge_url = None
+
     telefon = user.telefon if user.telefon else None
+    grupos = [group.name for group in user.groups.all()]
 
     return {
         "username": user.username,
