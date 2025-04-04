@@ -21,8 +21,32 @@ from ninja import NinjaAPI
 
 from biblioteca.api import api
 
+
+#para view export documentos
+from biblioteca.views import DocumentoUploadView
+from django.conf.urls.static import static
+from django.conf import settings
+
+
 urlpatterns = [
     path('', views.index),
     path('admin/', admin.site.urls),
     path("api/", api.urls),
+    #para exportar documentos
+    path("subir-documento/", DocumentoUploadView.as_view(), name="subir-documento"),
 ]
+
+
+
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+
+
+
+
+

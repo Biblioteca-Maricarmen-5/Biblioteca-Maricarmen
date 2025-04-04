@@ -36,6 +36,7 @@ AUTH_USER_MODEL = 'biblioteca.Usuari'
 
 INSTALLED_APPS = [
     "corsheaders",
+    'rest_framework',#pip install djangorestframework(para la api de archivos)
     'biblioteca.apps.BibliotecaConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -129,3 +130,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+
+#para export documentos
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
