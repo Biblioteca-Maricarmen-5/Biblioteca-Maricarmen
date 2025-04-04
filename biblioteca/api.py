@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate
 from ninja import NinjaAPI, Schema
 from ninja.security import HttpBasicAuth, HttpBearer
 from .models import *
-from typing import List, Optional, Union, Literal
+from typing import List, Optional, Union, Literal, Dict
 import secrets
 
 api = NinjaAPI()
@@ -34,6 +34,33 @@ class AuthBearer(HttpBearer):
 @api.get("/token/", auth=BasicAuth())
 def obtenir_token(request):
     return {"token": request.auth}
+
+
+
+
+# Esquema de respuesta
+class AuthResponse(Schema):
+    exists: bool
+
+
+# Esquema para recibir las credenciales
+class LoginSchema(Schema):
+    username: str
+    password: str
+
+# Esquema de respuesta
+class AuthResponse(Schema):
+    exists: bool
+
+@api.post("/login", response=AuthResponse)
+def login(request, payload: LoginSchema):
+    username = payload.username
+    password = payload.password
+    user = authenticate(username=username, password=password)
+    if user:
+        return {"exists": True}
+    else:
+        return {"exists": False}
 
 class CatalegOut(Schema):
     id: int
