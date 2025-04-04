@@ -1,11 +1,15 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from ninja import NinjaAPI, Schema
 from ninja.security import HttpBasicAuth, HttpBearer
 from .models import *
+from django.shortcuts import get_object_or_404
 from typing import List, Optional, Union, Literal, Dict
 import secrets
 
 api = NinjaAPI()
+
+
+User = get_user_model()
 
 
 # Autenticació bàsica
@@ -63,6 +67,48 @@ def login(request, payload: LoginSchema):
         return {"exists": True, "grupos": grupos}
     else:
         return {"exists": False, "grupos": []}
+
+
+
+
+
+
+
+# Esquema de respuesta para el perfil del usuario
+class UserProfileResponse(Schema):
+    username: str
+    nombre: str
+    email: str
+    centre: Optional[str]
+    cicle: Optional[str]
+    imatge: Optional[str]
+    grupos: List[str]
+    telefon: Optional[str]
+
+# Endpoint para obtener el perfil del usuario
+@api.get("/perfil/{username}", response=UserProfileResponse)
+def perfil(request, username: str):
+    user = get_object_or_404(User, username=username)
+    nombre = user.get_full_name() if user.first_name and user.last_name else None
+    centre_name = user.centre.nom if user.centre else None
+    cicle_name = user.cicle.nom if user.cicle else None
+    imatge_url = user.imatge.url if user.imatge else None
+    grupos = [group.name for group in user.groups.all()]
+    telefon = user.telefon if user.telefon else None
+
+    return {
+        "username": user.username,
+        "nombre": nombre,
+        "email": user.email,
+        "centre": centre_name,
+        "cicle": cicle_name,
+        "imatge": imatge_url,
+        "grupos": grupos,
+        "telefon": telefon,
+    }
+
+
+
 
 class CatalegOut(Schema):
     id: int
