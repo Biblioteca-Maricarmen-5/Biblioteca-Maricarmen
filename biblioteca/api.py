@@ -51,6 +51,7 @@ class LoginSchema(Schema):
 # Esquema de respuesta
 class AuthResponse(Schema):
     exists: bool
+    grupos: List[str] = []
 
 @api.post("/login", response=AuthResponse)
 def login(request, payload: LoginSchema):
@@ -58,9 +59,10 @@ def login(request, payload: LoginSchema):
     password = payload.password
     user = authenticate(username=username, password=password)
     if user:
-        return {"exists": True}
+        grupos = [group.name for group in user.groups.all()]  # Obtener nombres de los grupos
+        return {"exists": True, "grupos": grupos}
     else:
-        return {"exists": False}
+        return {"exists": False, "grupos": []}
 
 class CatalegOut(Schema):
     id: int
