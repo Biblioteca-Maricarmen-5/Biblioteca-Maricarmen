@@ -1,0 +1,175 @@
+/* Importar fuentes de Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Open+Sans&display=swap');
+        
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: #F5F5F5; 
+    color: #333;
+}
+
+h1, h2 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.parrafo, .boton, .input, .lista, .checkbox-container, .select {
+    font-family: 'Open Sans', sans-serif;
+}
+
+h1{
+    background-color: #214093;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+}
+h2{
+    background-color: #90A2C7;
+    color: black;
+    padding: 10px;
+    border-radius: 10px;
+}
+p{
+    background-color: #DDE1F1;
+    color: black;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+button {
+    background-color: #214093;
+    color: white;
+    width: auto;
+    height: auto;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+button:active {
+    background-color: #1A3379;
+    transform: translateY(1px);
+}
+
+input{
+    background-color: #DDE1F1;
+    color: black;
+    width: auto;
+    height: auto;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+}
+
+input:focus {
+    outline: 1px solid #214093;
+}
+
+a{
+    color: #1f43a5;
+    width: auto;
+    height: auto;
+    padding: 10px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Estilos para la lista */
+ul {
+    background-color: #DDE1F1;
+    color: black;
+    padding: 15px 25px;
+    border-radius: 10px;
+    list-style-type: none;
+}
+
+ul li {
+    padding: 8px 0;
+    border-bottom: 1px solid #90A2C7;
+}
+
+ul li:last-child {
+    border-bottom: none;
+}
+
+/* Estilos para los checkboxes personalizados */
+.checkbox-container {
+    display: block;
+    position: relative;
+    padding-left: 30px;
+    margin: 15px 0;
+    cursor: pointer;
+    color: black;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #DDE1F1;
+    border-radius: 4px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #90A2C7;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #214093;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Estilos para el select/dropdown */
+select {
+    display: block;
+    width: 200px;
+    padding: 10px;
+    background-color: #DDE1F1;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23214093'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 20px;
+}
+
+select:focus {
+    outline: 1px solid #214093;
+}
