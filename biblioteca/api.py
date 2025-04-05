@@ -4,8 +4,40 @@ from ninja.security import HttpBasicAuth, HttpBearer
 from .models import *
 from typing import List, Optional, Union, Literal, Dict
 import secrets
+from ninja import NinjaAPI, Router
+from ninja.files import UploadedFile
+import csv
+import os
+from django.conf import settings
+from django.core.files.storage import default_storage
+
 
 api = NinjaAPI()
+
+# Crear un Router específico para el endpoint de subida de documentos
+router = Router()
+
+# Endpoint para subir archivo CSV
+@router.post("/subir-documento/")
+def subir_documento(request, archivo: UploadedFile):
+    # Guardar el archivo en el sistema de archivos de Django
+    file_path = default_storage.save(f"temp/{archivo.name}", archivo)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    
+    # Procesar el archivo CSV
+    registros = []
+    with open(full_path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        registros = list(reader)
+    
+    # Devolver una respuesta con los registros procesados
+    return {
+        "mensaje": "Archivo procesado correctamente",
+        "registros": registros
+    }
+
+# Añadir el router a la API de documentos csv
+api.add_router("/", router)
 
 
 # Autenticació bàsica

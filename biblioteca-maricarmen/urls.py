@@ -1,52 +1,23 @@
-"""
-URL configuration for biblio_maricarmen project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path
 from biblioteca import views
 from ninja import NinjaAPI
 
-from biblioteca.api import api
+from biblioteca.api import api  # Importa la API de Ninja
 
-
-#para view export documentos
-from biblioteca.views import DocumentoUploadView
+# Para ver export documentos (si es necesario en el futuro)
+#from biblioteca.views import DocumentoUploadView  
 from django.conf.urls.static import static
 from django.conf import settings
-
 
 urlpatterns = [
     path('', views.index),
     path('admin/', admin.site.urls),
-    path("api/", api.urls),
-    #para exportar documentos
-    path("subir-documento/", DocumentoUploadView.as_view(), name="subir-documento"),
+    path("api/", api.urls),  # Rutas de la API Ninja
+    # Si alguna vez necesitas agregar vistas tradicionales para documentos, puedes descomentar la siguiente línea
+    # path("subir-documento/", DocumentoUploadView.as_view(), name="subir-documento"),
 ]
 
-
-
-
-
+# Para servir archivos estáticos durante el desarrollo
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
-
-
-
-
-
-
