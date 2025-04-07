@@ -6,10 +6,16 @@ from typing import List, Optional, Union, Literal, Dict
 import secrets
 from ninja import NinjaAPI, Router
 from ninja.files import UploadedFile
+from .models import Usuari, Centre, Cicle 
 import csv
 import os
+import re
+import traceback
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.http import JsonResponse
+from django.core.exceptions import ValidationError  # Asegúrate de que esta importación esté aquí
+
 
 
 api = NinjaAPI()
@@ -17,27 +23,41 @@ api = NinjaAPI()
 # Crear un Router específico para el endpoint de subida de documentos
 router = Router()
 
-# Endpoint para subir archivo CSV
-@router.post("/subir-documento/")
-def subir_documento(request, archivo: UploadedFile):
-    # Guardar el archivo en el sistema de archivos de Django
-    file_path = default_storage.save(f"temp/{archivo.name}", archivo)
-    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
-    
-    # Procesar el archivo CSV
-    registros = []
-    with open(full_path, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        registros = list(reader)
-    
-    # Devolver una respuesta con los registros procesados
-    return {
-        "mensaje": "Archivo procesado correctamente",
-        "registros": registros
-    }
+class UploadResponse(Schema):
+    mensaje: str
+    registros: Optional[List[dict]] = None
+    error: Optional[str] = None
 
-# Añadir el router a la API de documentos csv
-api.add_router("/", router)
+
+class UsuariCSV(Schema):
+    nom: str
+    cognom1: str
+    cognom2: str
+    email: str
+    telefon: str
+    centre: str
+    grup: str
+
+
+#para errores del documento csv
+class FilaError(Schema):
+    fila: dict
+    error: str
+
+
+
+class UploadResponse(Schema):
+    mensaje: str
+    registros: Optional[List[UsuariCSV]] = None
+    error: Optional[str] = None
+    errores: Optional[List[FilaError]] = None
+
+
+
+
+
+
+
 
 
 # Autenticació bàsica
@@ -116,6 +136,9 @@ class LlibreIn(Schema):
     editorial: str
 
 
+
+
+
 @api.get("/llibres", response=List[LlibreOut])
 @api.get("/llibres/", response=List[LlibreOut])
 #@api.get("/llibres/", response=List[LlibreOut], auth=AuthBearer())
@@ -172,3 +195,123 @@ def get_exemplars(request):
         )
 
     return result
+
+
+api = NinjaAPI()
+
+# Crear un Router específico para el endpoint de subida de documentos
+router = Router()
+
+# Función para validar si el nombre contiene solo letras
+def validar_nombre(nombre):
+    if not re.match(r'^[A-Za-záéíóúÁÉÍÓÚñÑ]+$', nombre):
+        raise ValidationError(f"El nombre '{nombre}' contiene caracteres no válidos.")
+
+# Función para validar si el teléfono contiene solo números
+def validar_telefono(telefono):
+    if not telefono.isdigit():
+        raise ValidationError(f"El teléfono '{telefono}' debe contener solo números.")
+
+
+
+@router.post("/subir-documento/", response={200: UploadResponse, 500: UploadResponse})
+def subir_documento(request, archivo: UploadedFile):
+    file_path = default_storage.save(f"temp/{archivo.name}", archivo)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+    registros: List[UsuariCSV] = []
+    errores: List[Dict] = []
+    usuarios_creados = 0
+
+    try:
+        with open(full_path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                
+                cleaned_row = {key.strip(): (value.strip() if value is not None else "") for key, value in row.items()}
+
+
+                if not any(cleaned_row.values()):
+                    continue
+
+                email = (cleaned_row.get("email") or "").strip().replace(' ', '').lower()
+
+
+                
+
+                if not email or "@" not in email:
+                    errores.append({"fila": cleaned_row, "error": "Email vacío o inválido"})
+                    continue
+
+                if Usuari.objects.filter(username=email).exists():
+                    errores.append({"fila": cleaned_row, "error": f"El email {email} ya existe."})
+                    continue
+
+                nom = (cleaned_row.get("nom") or "").strip()
+                cognom1 = (cleaned_row.get("cognom1") or "").strip()
+                cognom2 = (cleaned_row.get("cognom2") or "").strip()
+                telefon = cleaned_row.get("telefon", "")
+                centre_nom = cleaned_row.get("centre", "")
+                cicle_nom = cleaned_row.get("grup", "")
+
+                if not all([nom, cognom1, cognom2, telefon, centre_nom, cicle_nom]):
+                    errores.append({"fila": cleaned_row, "error": "Faltan campos obligatorios."})
+                    continue
+
+                try:
+                    validar_nombre(nom)
+                    validar_nombre(cognom1)
+                    if cognom2:
+                        validar_nombre(cognom2)
+                    validar_telefono(telefon)
+
+                    centre, _ = Centre.objects.get_or_create(nom=centre_nom)
+                    cicle, _ = Cicle.objects.get_or_create(nom=cicle_nom)
+
+                    Usuari.objects.create_user(
+                        username=email,
+                        email=email,
+                        first_name=nom,
+                        last_name=f"{cognom1} {cognom2}",
+                        telefon=telefon,
+                        centre=centre,
+                        cicle=cicle,
+                        password="1234"
+                    )
+                    usuarios_creados += 1
+
+                    registros.append(UsuariCSV(
+                        nom=nom,
+                        cognom1=cognom1,
+                        cognom2=cognom2,
+                        email=email,
+                        telefon=telefon,
+                        centre=centre_nom,
+                        grup=cicle_nom
+                    ))
+
+                except ValidationError as e:
+                    errores.append({"fila": cleaned_row, "error": str(e)})
+                    continue
+
+    except Exception as e:
+        print("🔥 Error procesando CSV:", e)
+        traceback.print_exc()
+        return JsonResponse({"mensaje": "Error interno del servidor."}, status=500)
+
+    finally:
+        try:
+            os.remove(full_path)
+        except:
+            pass
+
+    return 200, UploadResponse(
+        mensaje=f"✅ Archivo procesado. Usuarios creados: {usuarios_creados}",
+        registros=registros,
+        errores=errores if errores else None
+    )
+
+
+
+# Registrar el router con el api
+api.add_router("/api/", router)
