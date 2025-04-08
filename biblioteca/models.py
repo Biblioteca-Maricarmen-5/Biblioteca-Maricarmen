@@ -112,6 +112,17 @@ class Usuari(AbstractUser):
     imatge = models.ImageField(upload_to='usuaris/',null=True,blank=True)
     auth_token = models.CharField(max_length=32,blank=True,null=True)
     telefon = models.CharField(max_length=20,blank=True,null=True)
+    def save(self, *args, **kwargs):
+        # Si el usuario no tiene ID (se está creando)
+        is_new = self.pk is None
+
+        # Primero guarda el objeto para tener asignado un ID.
+        super().save(*args, **kwargs)
+
+        # Si es nuevo, añadimos el usuario al grupo "usuarios"
+        if is_new:
+            group, created = Group.objects.get_or_create(name='usuarios')
+            self.groups.add(group)
     def __str__(self):
         return self.username
 
