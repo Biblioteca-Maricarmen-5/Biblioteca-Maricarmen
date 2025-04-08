@@ -112,6 +112,8 @@ class Usuari(AbstractUser):
     imatge = models.ImageField(upload_to='usuaris/',null=True,blank=True)
     auth_token = models.CharField(max_length=32,blank=True,null=True)
     telefon = models.CharField(max_length=20,blank=True,null=True)
+    def __str__(self):
+        return self.username
 
 class Reserva(models.Model):
     class Meta:

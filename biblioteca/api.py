@@ -1,10 +1,12 @@
 from django.contrib.auth import authenticate, get_user_model
-from ninja import NinjaAPI, Schema
+from ninja import NinjaAPI, Schema, Field
 from ninja.security import HttpBasicAuth, HttpBearer
 from .models import *
 from django.shortcuts import get_object_or_404
 from typing import List, Optional, Union, Literal, Dict
 import secrets
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+import hashlib
 
 api = NinjaAPI()
 
@@ -53,24 +55,50 @@ class LoginSchema(Schema):
     password: str
 
 # Esquema de respuesta
+
 class AuthResponse(Schema):
     exists: bool
     grupos: List[str] = []
+    token: Optional[str] = None  
 
 @api.post("/login", response=AuthResponse)
 def login(request, payload: LoginSchema):
     username = payload.username
     password = payload.password
     user = authenticate(username=username, password=password)
+    
     if user:
         grupos = [group.name for group in user.groups.all()]  # Obtener nombres de los grupos
-        return {"exists": True, "grupos": grupos}
+        telefon = getattr(user, "telefon", None)
+
+        # Asegurarnos de que el usuario tiene al menos un grupo y un teléfono
+        if grupos and telefon:
+            primer_grupo = grupos[0]
+            # Encriptar el nombre del grupo usando SHA-256 
+            grupo_encriptado = hashlib.sha256(primer_grupo.encode()).hexdigest()
+            telefon_encriptado = hashlib.sha256(telefon.encode()).hexdigest()
+            token = f"{grupo_encriptado}_{telefon_encriptado}"
+        else:
+            token = None
+
+        return {
+            "exists": True,
+            "grupos": grupos,
+            "token": token  # Aquí devolvemos el token
+        }
     else:
-        return {"exists": False, "grupos": []}
+        return {"exists": False, "grupos": [], "token": None}
 
 
 
 
+# esquema para ver los grupos y permitir accesos
+
+def desencriptar_grupo(token):
+    grupo_encriptado, _ = token.split('_')
+    # Desencriptar el grupo usando SHA-256 (esto sería reversible en tu caso, usando el grupo original).
+    grupo_original = hashlib.sha256(grupo_encriptado.encode()).hexdigest()
+    return grupo_original
 
 
 
@@ -118,6 +146,72 @@ def perfil(request, data: UserProfileRequest):
     }
 
 
+
+
+class PerfilUpdateSchema(Schema):
+    username: str
+    nombre: Optional[str]
+    email: Optional[str]
+    centre: Optional[str]
+    cicle: Optional[str]
+    telefon: Optional[str]
+
+@api.patch("/perfil/")
+def actualizar_perfil(request, data: PerfilUpdateSchema):
+    user = get_object_or_404(User, username=data.username)
+
+    # nombre: separar en nombre y apellido si hace falta
+    if data.nombre:
+        partes = data.nombre.split()
+        user.first_name = partes[0]
+        user.last_name = " ".join(partes[1:]) if len(partes) > 1 else ""
+
+    if data.email:
+        user.email = data.email
+
+    if data.centre:
+        user.centre = Centre.objects.filter(nom=data.centre).first()
+    else:
+        user.centre = None
+
+    if data.cicle:
+        user.cicle = Cicle.objects.filter(nom=data.cicle).first()
+    else:
+        user.cicle = None
+
+    user.telefon = data.telefon
+    user.save()
+
+    return {"success": True}
+
+
+class PerfilCheckSchema(Schema):
+    username: str
+    nombre: Optional[str]
+    email: Optional[str]
+    centre: Optional[str]
+    cicle: Optional[str]
+    telefon: Optional[str]
+
+class PerfilCheckResponse(Schema):
+    modified: bool
+
+@api.post("/verificar-cambios/", response=PerfilCheckResponse)
+def verificar_cambios(request, data: PerfilCheckSchema):
+    user = get_object_or_404(User, username=data.username)
+
+    centre_name = user.centre.nom if user.centre else None
+    cicle_name = user.cicle.nom if user.cicle else None
+
+    cambios = (
+        (user.get_full_name() != data.nombre) or
+        (user.email != data.email) or
+        (centre_name != data.centre) or
+        (cicle_name != data.cicle) or
+        (user.telefon != data.telefon)
+    )
+
+    return {"modified": cambios}
 
 
 class CatalegOut(Schema):
