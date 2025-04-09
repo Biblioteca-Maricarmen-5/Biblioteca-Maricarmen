@@ -104,6 +104,17 @@ def crear_autores_y_libros():
     ejemplares_creados = 0
     ejemplares_objetivo = 5000
     
+    # Conjunto para almacenar ISBNs ya utilizados y garantizar unicidad
+    used_isbns = set()
+    
+    # Función para obtener un ISBN único
+    def get_unique_isbn():
+        while True:
+            isbn = fake.isbn13()
+            if isbn not in used_isbns:
+                used_isbns.add(isbn)
+                return isbn
+    
     # Primera pasada: asignar entre 1 y 10 libros a cada autor
     for autor in autores:
         # Determinar cuántos libros tendrá este autor (entre 1 y 10)
@@ -127,7 +138,7 @@ def crear_autores_y_libros():
                 resum=fake.paragraph(nb_sentences=5),
                 anotacions=fake.paragraph(nb_sentences=2) if random.random() < 0.7 else None,
                 mides=f"{random.randint(15, 30)}x{random.randint(20, 40)} cm",
-                ISBN=fake.isbn13() if random.random() < 0.8 else None,
+                ISBN=get_unique_isbn(),  # Siempre generamos un ISBN único
                 editorial=fake.company(),
                 colleccio=fake.word().title() if random.random() < 0.5 else None,
                 lloc=fake.city(),
@@ -193,7 +204,7 @@ def crear_autores_y_libros():
             resum=fake.paragraph(nb_sentences=5),
             anotacions=fake.paragraph(nb_sentences=2) if random.random() < 0.7 else None,
             mides=f"{random.randint(15, 30)}x{random.randint(20, 40)} cm",
-            ISBN=fake.isbn13() if random.random() < 0.8 else None,
+            ISBN=get_unique_isbn(),  # Siempre generamos un ISBN único
             editorial=fake.company(),
             colleccio=fake.word().title() if random.random() < 0.5 else None,
             lloc=fake.city(),
