@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.utils.timezone import now
 from django.contrib.auth.hashers import make_password
 
@@ -121,7 +121,7 @@ class Usuari(AbstractUser):
 
         # Si es nuevo, añadimos el usuario al grupo "usuarios"
         if is_new:
-            group, created = Group.objects.get_or_create(name='usuarios')
+            group, created = Group.objects.get_or_create(name='usuari')
             self.groups.add(group)
     def __str__(self):
         return self.username

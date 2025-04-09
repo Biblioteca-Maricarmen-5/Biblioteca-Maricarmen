@@ -102,38 +102,32 @@ def desencriptar_grupo(token):
 
 
 
-# Entrada esperada del POST
+# El endpoint /perfil/ que obtiene el perfil puede mantenerse igual, por ejemplo:
 class UserProfileRequest(Schema):
     username: str
 
-# Salida del perfil de usuario
 class UserProfileResponse(Schema):
     username: str
     nombre: str
     email: str
-    centre: str | None = None
-    cicle: str | None = None
-    imatge: str | None = None
+    centre: Optional[str] = None
+    cicle: Optional[str] = None
+    imatge: Optional[str] = None
     grupos: list[str]
-    telefon: str | None = None
+    telefon: Optional[str] = None
 
 @api.post("/perfil/", response=UserProfileResponse)
 def perfil(request, data: UserProfileRequest):
     user = get_object_or_404(User, username=data.username)
-
     nombre = user.get_full_name() if user.first_name or user.last_name else ""
     centre_name = user.centre.nom if user.centre else None
     cicle_name = user.cicle.nom if user.cicle else None
-
-    # Manejo seguro de imagen
     try:
         imatge_url = user.imatge.url if user.imatge else None
     except ValueError:
         imatge_url = None
-
     telefon = user.telefon if user.telefon else None
     grupos = [group.name for group in user.groups.all()]
-
     return {
         "username": user.username,
         "nombre": nombre,
@@ -148,70 +142,46 @@ def perfil(request, data: UserProfileRequest):
 
 
 
+# Esquema para actualización de los campos editables
 class PerfilUpdateSchema(Schema):
     username: str
-    nombre: Optional[str]
-    email: Optional[str]
-    centre: Optional[str]
-    cicle: Optional[str]
-    telefon: Optional[str]
+    imatge: Optional[str] = None
+    email: Optional[str] = None
+    telefon: Optional[str] = None
 
-@api.patch("/perfil/")
-def actualizar_perfil(request, data: PerfilUpdateSchema):
-    user = get_object_or_404(User, username=data.username)
-
-    # nombre: separar en nombre y apellido si hace falta
-    if data.nombre:
-        partes = data.nombre.split()
-        user.first_name = partes[0]
-        user.last_name = " ".join(partes[1:]) if len(partes) > 1 else ""
-
-    if data.email:
-        user.email = data.email
-
-    if data.centre:
-        user.centre = Centre.objects.filter(nom=data.centre).first()
-    else:
-        user.centre = None
-
-    if data.cicle:
-        user.cicle = Cicle.objects.filter(nom=data.cicle).first()
-    else:
-        user.cicle = None
-
-    user.telefon = data.telefon
-    user.save()
-
-    return {"success": True}
-
-
-class PerfilCheckSchema(Schema):
-    username: str
-    nombre: Optional[str]
-    email: Optional[str]
-    centre: Optional[str]
-    cicle: Optional[str]
-    telefon: Optional[str]
-
+# Esquema para la respuesta de la verificación de cambios
 class PerfilCheckResponse(Schema):
     modified: bool
 
 @api.post("/verificar-cambios/", response=PerfilCheckResponse)
-def verificar_cambios(request, data: PerfilCheckSchema):
+def verificar_cambios(request, data: PerfilUpdateSchema):
     user = get_object_or_404(User, username=data.username)
-
-    centre_name = user.centre.nom if user.centre else None
-    cicle_name = user.cicle.nom if user.cicle else None
-
-    cambios = (
-        (user.get_full_name() != data.nombre) or
+    # Se compara la URL actual de la imagen (si existe) con la enviada.
+    current_imatge = user.imatge.url if user.imatge else None
+    modified = (
+        (current_imatge != data.imatge) or
         (user.email != data.email) or
-        (centre_name != data.centre) or
-        (cicle_name != data.cicle) or
         (user.telefon != data.telefon)
     )
+    return {"modified": modified}
 
-    return {"modified": cambios}
+@api.patch("/perfil/")
+def actualizar_perfil(request, data: PerfilUpdateSchema):
+    user = get_object_or_404(User, username=data.username)
+    
+    # Actualizar únicamente los campos editables
+    if data.imatge is not None:
+        # Se asume que se recibe una URL para la imagen. 
+        # Nota: en entornos reales, es común tratar imágenes con FormData.
+        user.imatge = data.imatge  
+    if data.email is not None:
+        user.email = data.email
+    if data.telefon is not None:
+        user.telefon = data.telefon
+
+    user.save()
+    return {"success": True}
+
 
 
 class CatalegOut(Schema):
