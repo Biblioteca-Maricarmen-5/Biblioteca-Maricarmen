@@ -116,6 +116,7 @@ class Usuari(AbstractUser):
     cicle = models.ForeignKey(Cicle,on_delete=models.SET_NULL,null=True,blank=True)
     imatge = models.ImageField(upload_to='usuaris/',null=True,blank=True)
     auth_token = models.CharField(max_length=32,blank=True,null=True)
+    telefon = models.CharField(max_length=20, null=True, blank=True) #añadimos telefono
 
 class Reserva(models.Model):
     class Meta:
@@ -159,3 +160,8 @@ class Log(models.Model):
         return f"{self.accio} - {self.tipus}"
 
 
+
+#para la manipulacion de documentos
+class Documento(models.Model):
+    archivo = models.FileField(upload_to="documentos/")
+    fecha_subida = models.DateTimeField(auto_now_add=True)
