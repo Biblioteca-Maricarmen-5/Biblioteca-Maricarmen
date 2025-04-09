@@ -26,7 +26,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*",])
+#ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*",])
+ALLOWED_HOSTS = ['biblioteca5.ieti.site', 'localhost']
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 #CSRF_TRUSTED_ORIGINS = ["https://biblio.ieti.site"]
 
@@ -58,7 +60,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'biblioteca-maricarmen.urls'
+ROOT_URLCONF = 'biblioteca_maricarmen.urls'
 
 TEMPLATES = [
     {
@@ -76,7 +78,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'biblioteca-maricarmen.wsgi.application'
+WSGI_APPLICATION = 'biblioteca_maricarmen.wsgi.application'
 
 
 # Database
@@ -121,8 +123,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
