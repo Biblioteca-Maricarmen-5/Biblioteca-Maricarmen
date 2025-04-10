@@ -3,16 +3,13 @@ from ninja import NinjaAPI, Schema, Field
 from ninja.security import HttpBasicAuth, HttpBearer
 from .models import *
 from django.shortcuts import get_object_or_404
-from typing import List, Optional, Union, Literal, Dict
+from typing import List, Optional, Union
 import secrets
-from base64 import urlsafe_b64encode, urlsafe_b64decode
 import hashlib
 
 api = NinjaAPI()
 
-
 User = get_user_model()
-
 
 # Autenticació bàsica
 class BasicAuth(HttpBasicAuth):
@@ -30,9 +27,9 @@ class BasicAuth(HttpBasicAuth):
 class AuthBearer(HttpBearer):
     def authenticate(self, request, token):
         try:
-            user = Usuari.objects.get(auth_token=token)
+            user = User.objects.get(auth_token=token)
             return user
-        except Usuari.DoesNotExist:
+        except User.DoesNotExist:
             return None
 
 # Endpoint per obtenir un token
@@ -41,25 +38,16 @@ class AuthBearer(HttpBearer):
 def obtenir_token(request):
     return {"token": request.auth}
 
-
-
-
 # Esquema de respuesta
 class AuthResponse(Schema):
     exists: bool
-
+    grupos: List[str] = []
+    token: Optional[str] = None  
 
 # Esquema para recibir las credenciales
 class LoginSchema(Schema):
     username: str
     password: str
-
-# Esquema de respuesta
-
-class AuthResponse(Schema):
-    exists: bool
-    grupos: List[str] = []
-    token: Optional[str] = None  
 
 @api.post("/login", response=AuthResponse)
 def login(request, payload: LoginSchema):
@@ -68,13 +56,11 @@ def login(request, payload: LoginSchema):
     user = authenticate(username=username, password=password)
     
     if user:
-        grupos = [group.name for group in user.groups.all()]  # Obtener nombres de los grupos
+        grupos = [group.name for group in user.groups.all()]
         telefon = getattr(user, "telefon", None)
 
-        # Asegurarnos de que el usuario tiene al menos un grupo y un teléfono
         if grupos and telefon:
             primer_grupo = grupos[0]
-            # Encriptar el nombre del grupo usando SHA-256 
             grupo_encriptado = hashlib.sha256(primer_grupo.encode()).hexdigest()
             telefon_encriptado = hashlib.sha256(telefon.encode()).hexdigest()
             token = f"{grupo_encriptado}_{telefon_encriptado}"
@@ -84,25 +70,12 @@ def login(request, payload: LoginSchema):
         return {
             "exists": True,
             "grupos": grupos,
-            "token": token  # Aquí devolvemos el token
+            "token": token
         }
     else:
         return {"exists": False, "grupos": [], "token": None}
 
-
-
-
-# esquema para ver los grupos y permitir accesos
-
-def desencriptar_grupo(token):
-    grupo_encriptado, _ = token.split('_')
-    # Desencriptar el grupo usando SHA-256 (esto sería reversible en tu caso, usando el grupo original).
-    grupo_original = hashlib.sha256(grupo_encriptado.encode()).hexdigest()
-    return grupo_original
-
-
-
-# El endpoint /perfil/ que obtiene el perfil puede mantenerse igual, por ejemplo:
+# Esquema de respuesta para perfil
 class UserProfileRequest(Schema):
     username: str
 
@@ -139,9 +112,6 @@ def perfil(request, data: UserProfileRequest):
         "telefon": telefon,
     }
 
-
-
-
 # Esquema para actualización de los campos editables
 class PerfilUpdateSchema(Schema):
     username: str
@@ -156,7 +126,6 @@ class PerfilCheckResponse(Schema):
 @api.post("/verificar-cambios/", response=PerfilCheckResponse)
 def verificar_cambios(request, data: PerfilUpdateSchema):
     user = get_object_or_404(User, username=data.username)
-    # Se compara la URL actual de la imagen (si existe) con la enviada.
     current_imatge = user.imatge.url if user.imatge else None
     modified = (
         (current_imatge != data.imatge) or
@@ -169,10 +138,7 @@ def verificar_cambios(request, data: PerfilUpdateSchema):
 def actualizar_perfil(request, data: PerfilUpdateSchema):
     user = get_object_or_404(User, username=data.username)
     
-    # Actualizar únicamente los campos editables
     if data.imatge is not None:
-        # Se asume que se recibe una URL para la imagen. 
-        # Nota: en entornos reales, es común tratar imágenes con FormData.
         user.imatge = data.imatge  
     if data.email is not None:
         user.email = data.email
@@ -181,7 +147,6 @@ def actualizar_perfil(request, data: PerfilUpdateSchema):
 
     user.save()
     return {"success": True}
-
 
 
 class CatalegOut(Schema):

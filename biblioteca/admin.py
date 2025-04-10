@@ -60,8 +60,15 @@ class PrestecAdmin(admin.ModelAdmin):
     fields = ('exemplar','usuari','data_prestec','data_retorn','anotacions')
     list_display = ('exemplar','usuari','data_prestec','data_retorn')
 
+class ReservaAdmin(admin.ModelAdmin):
+    readonly_fields = ('data',)
+    fields = ('exemplar', 'usuari', 'data')
+    list_display = ('exemplar', 'usuari', 'data')
+
 admin.site.register(Centre)
 admin.site.register(Cicle)
-admin.site.register(Reserva)
+admin.site.register(Reserva, ReservaAdmin)
 admin.site.register(Prestec,PrestecAdmin)
 admin.site.register(Peticio)
+
+
