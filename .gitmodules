@@ -1,4 +1,3 @@
 [submodule "react"]
 	path = react
-	#url = https://github.com/adriaht/biblioteca-maricarmen-react/tree/produccion-react
-	url = https://github.com/adriaht/biblioteca_maricarmen-react.git
+	url = https://github.com/adriaht/biblioteca-maricarmen-react
