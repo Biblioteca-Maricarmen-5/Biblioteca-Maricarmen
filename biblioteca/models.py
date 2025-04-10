@@ -38,10 +38,8 @@ class Cataleg(models.Model):
     mides = models.CharField(max_length=100,null=True,blank=True)
     tags = models.ManyToManyField(Categoria,blank=True)
     def exemplars(self):
-        return 0
+    	return 0
 
-    def __str__(self):
-        return self.titol
 
 class Llibre(Cataleg):
     ISBN = models.CharField(max_length=13, blank=True, null=True)
@@ -104,8 +102,14 @@ class Imatge(models.Model):
 class Centre(models.Model):
     nom = models.CharField(max_length=200)
 
+    def __str__(self):
+        return self.nom
+
 class Cicle(models.Model):
     nom = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.nom
 
 class Usuari(AbstractUser):
     centre = models.ForeignKey(Centre,on_delete=models.SET_NULL,null=True,blank=True)

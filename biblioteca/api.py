@@ -197,8 +197,6 @@ def get_exemplars(request):
     return result
 
 
-api = NinjaAPI()
-
 # Crear un Router específico para el endpoint de subida de documentos
 router = Router()
 
