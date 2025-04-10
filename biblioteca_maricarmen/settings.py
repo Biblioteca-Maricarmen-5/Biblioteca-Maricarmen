@@ -26,8 +26,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
-#ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*",])
-ALLOWED_HOSTS = ['biblioteca5.ieti.site', 'localhost']
+
+ALLOWED_HOSTS = ['biblioteca5.ieti.site', 'www.biblioteca5.ieti.site']
+
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 #CSRF_TRUSTED_ORIGINS = ["https://biblio.ieti.site"]
@@ -138,6 +139,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 
+
 #para export documentos
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -145,8 +147,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CORS_ALLOWED_ORIGINS = [
     "https://biblioteca5.ieti.site",  # Dominio de tu frontend React
 ]
-
-
 
 
 

@@ -14,14 +14,16 @@ import traceback
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
-from django.core.exceptions import ValidationError  # Asegúrate de que esta importación esté aquí
+from django.core.exceptions import ValidationError 
+#from somewhere import UploadResponse
+
 
 
 
 api = NinjaAPI()
 
 # Crear un Router específico para el endpoint de subida de documentos
-router = Router()
+
 
 class UploadResponse(Schema):
     mensaje: str
@@ -320,4 +322,5 @@ def validar_email(email):
         raise ValidationError(f"El email '{email}' no tiene un formato válido.")
 
 # Registrar el router con el api
-api.add_router("/api/", router)
+#api.add_router("/api/", router)
+api.add_router("/", router)
