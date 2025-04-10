@@ -213,9 +213,9 @@ def validar_telefono(telefono):
         raise ValidationError(f"El teléfono '{telefono}' debe contener solo números.")
 
 
-
 @router.post("/subir-documento/", response={200: UploadResponse, 500: UploadResponse})
 def subir_documento(request, archivo: UploadedFile):
+    print("Recibiendo archivo...")
     file_path = default_storage.save(f"temp/{archivo.name}", archivo)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
 
@@ -223,11 +223,14 @@ def subir_documento(request, archivo: UploadedFile):
     errores: List[Dict] = []
     usuarios_creados = 0
 
+
+
     try:
+        print("Abriendo archivo CSV...")
         with open(full_path, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                
+                print(f"Procesando fila: {row}")
                 cleaned_row = {key.strip(): (value.strip() if value is not None else "") for key, value in row.items()}
 
 
@@ -237,10 +240,8 @@ def subir_documento(request, archivo: UploadedFile):
                 email = (cleaned_row.get("email") or "").strip().replace(' ', '').lower()
 
 
-                
-
-                if not email or "@" not in email:
-                    errores.append({"fila": cleaned_row, "error": "Email vacío o inválido"})
+                if not email:
+                    errores.append({"fila": cleaned_row, "error": "Email vacío"})
                     continue
 
                 if Usuari.objects.filter(username=email).exists():
@@ -264,6 +265,7 @@ def subir_documento(request, archivo: UploadedFile):
                     if cognom2:
                         validar_nombre(cognom2)
                     validar_telefono(telefon)
+                    validar_email(email) 
 
                     centre, _ = Centre.objects.get_or_create(nom=centre_nom)
                     cicle, _ = Cicle.objects.get_or_create(nom=cicle_nom)
@@ -291,6 +293,7 @@ def subir_documento(request, archivo: UploadedFile):
                     ))
 
                 except ValidationError as e:
+                    print(f"Error al procesar el CSV: {str(e)}")
                     errores.append({"fila": cleaned_row, "error": str(e)})
                     continue
 
@@ -304,7 +307,7 @@ def subir_documento(request, archivo: UploadedFile):
             os.remove(full_path)
         except:
             pass
-
+    print(f"Usuarios creados: {usuarios_creados}")
     return 200, UploadResponse(
         mensaje=f"✅ Archivo procesado. Usuarios creados: {usuarios_creados}",
         registros=registros,
@@ -312,6 +315,11 @@ def subir_documento(request, archivo: UploadedFile):
     )
 
 
+def validar_email(email):
+    # Expresión regular para un email válido (básico)
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    if not re.match(email_regex, email):
+        raise ValidationError(f"El email '{email}' no tiene un formato válido.")
 
 # Registrar el router con el api
 api.add_router("/api/", router)
